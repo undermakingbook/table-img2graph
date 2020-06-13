@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "table-img2graph"
+version = "0.1.0"
+description = "Converting table image from scanned pdf data to graph of cells"
+authors = ["SAKUMOTO, Takeshi <letusbookmake@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1.18.5"
+opencv-python = "^4.2.0"
+imutils = "^0.5.3"
+tesserocr = "^2.5.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
