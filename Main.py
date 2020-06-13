@@ -8,16 +8,15 @@ from tesserocr import PyTessBaseAPI, PSM, OEM
 from Table import Cell
 
 
-def extract_ruled_line(img, h_thr=None):
-    """[summary]
-    Extract ruled lines of a table using cv2.findContours
+def extract_ruled_line(img, v_thr=None):
+    """Extract ruled lines of a table using cv2.findContours
     Args:
-        img ([type]): [description]
-        h_thr ([type], optional): [description]. Defaults to None.
+        img (np.ndarray): ndarray of input image read by opencv
+        v_thr (int, optional): lowest value of horizontal kernel. Defaults to None.
 
     Returns:
-        vertical_contours ([type]) : [description]
-        horizontal_contours ([type]) : [description]
+        [(np.ndarray, np.ndarray)] : contours of vertical ruled line
+        [(np.ndarray, np.ndarray)] : contours of horizontal ruled line
     """
     # convert image to grayscale and invert to use findContours
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -29,11 +28,11 @@ def extract_ruled_line(img, h_thr=None):
                                 cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
     # A vertical kernel to extract vertical ruled line of a table
-    # if h_thr is None, set h_thr a larger one of 10px, 1/50 of height
-    if h_thr is None:
-        h_thr = max(10, height * 0.02)
-    # lowest height of vertical line is h_thr
-    vertical_kernel_height = math.ceil(h_thr)
+    # if v_thr is None, set v_thr a larger one of 10px, 1/50 of height
+    if v_thr is None:
+        v_thr = max(10, height * 0.02)
+    # lowest height of vertical line is v_thr
+    vertical_kernel_height = math.ceil(v_thr)
     vertical_kernel = cv2.getStructuringElement(
         cv2.MORPH_RECT, (1, vertical_kernel_height))
 
@@ -65,15 +64,14 @@ def extract_ruled_line(img, h_thr=None):
 
 
 def extract_cells(img, vcon, hcon, thr=3):
-    """[summary]
-    Extracting cells of a table using cv2.findContours
+    """Extracting cells of a table using cv2.findContours
     Args:
-        img ([type]): [description]
-        vcon ([type]): [description]
-        hcon ([type]): [description]
-        thr (int, optional): [description]. Defaults to 3.
+        img (np.ndarray): ndarray of input image read by opencv
+        vcon ([(np.ndarray, np.ndarray)]): contours of vertical ruled line
+        hcon ([(np.ndarray, np.ndarray)]): contours of horizontal ruled line
+        thr (int, optional): allowance of cell line gap. Defaults to 3.
     Returns:
-        cells ([Cell]): list of cells
+        [Cell]: list of cells
     """
     # a list of vertical and horizontal ruled line
     rects = vcon + hcon
@@ -110,14 +108,16 @@ def extract_cells(img, vcon, hcon, thr=3):
     return cells
 
 
-def get_h_thr(api, imgpath):
-    """[summary]
-
+def get_v_thr(api, imgpath):
+    """getting frequent value of cell-to-cell height
+    This function identify frequent value of character height using tesseract ocr
+    to prevent line extracting function from misrecognition of vertical line of character
+    as vertical line of cell
     Args:
-        api ():
-        imgpath ([type]): [description]
+        api (PyTessBaseAPI): an instance of PyTessBaseAPI
+        imgpath (string): a path to image file
     Returns:
-        h_thr (int): threshold value of kernel to extract horizontal rurled line
+        int: threshold value of kernel to extract vertical rurled line
     """
     # get ocr result
     words = api.GetWords()
@@ -125,33 +125,31 @@ def get_h_thr(api, imgpath):
     hs = [words['h'] for _, words in words]
     freq, bins = np.histogram(hs)
     # get around value of Mode of horizontal
-    h_thr = np.ceil((bins[np.argmax(freq) + 1] + bins[np.argmax(freq)]) / 2)
-    return h_thr
+    v_thr = np.ceil((bins[np.argmax(freq) + 1] + bins[np.argmax(freq)]) / 2)
+    return v_thr
 
 
 def detect_relations(cells, thr=10):
-    """[summary]
-    detect column and row relations of cells
+    """detect column and row relations of each cell
     Args:
-        cells ([type]): [description]
-        thr (int, optional): [description]. Defaults to 10.
+        cells ([Cells]): list of all cells
+        thr (int, optional): largest value of cell-to-cell height. Defaults to 10.
     """
-    # smallest cell height
-    h_min = min([c.coord.y_ed - c.coord.y_st for c in cells])
-    v_min = min([c.coord.x_ed - c.coord.x_st for c in cells])
+    # smallest value of vertical/horizontal cell-to-cell
+    v_min = min([c.coord.y_ed - c.coord.y_st for c in cells])
+    h_min = min([c.coord.x_ed - c.coord.x_st for c in cells])
     for i in range(len(cells)):
         for j in range(len(cells)):
-
             # col relation
             # if a space of two cells is larger than 0 and smaller than threshold
             # and if y center of one cell are range of y of other cell
             if 0 <= cells[j].coord.x_st - cells[i].coord.x_ed <= thr\
                and (cells[j].coord.y_st < (cells[i].coord.y_st + cells[i].coord.y_ed) / 2 < cells[j].coord.y_ed
                     or cells[i].coord.y_st < (cells[j].coord.y_st + cells[j].coord.y_ed) / 2 < cells[i].coord.y_ed
-                    or cells[j].coord.y_st < (cells[i].coord.y_st + cells[i].coord.y_st + h_min) / 2 < cells[j].coord.y_ed
-                    or cells[i].coord.y_st < (cells[j].coord.y_st + cells[j].coord.y_st + h_min) / 2 < cells[i].coord.y_ed
-                    or cells[j].coord.y_st < (cells[i].coord.y_ed + (cells[i].coord.y_ed - h_min)) / 2 < cells[j].coord.y_ed
-                    or cells[i].coord.y_st < (cells[j].coord.y_ed + (cells[j].coord.y_ed - h_min)) / 2 < cells[i].coord.y_ed):
+                    or cells[j].coord.y_st < (cells[i].coord.y_st + cells[i].coord.y_st + v_min) / 2 < cells[j].coord.y_ed
+                    or cells[i].coord.y_st < (cells[j].coord.y_st + cells[j].coord.y_st + v_min) / 2 < cells[i].coord.y_ed
+                    or cells[j].coord.y_st < (cells[i].coord.y_ed + (cells[i].coord.y_ed - v_min)) / 2 < cells[j].coord.y_ed
+                    or cells[i].coord.y_st < (cells[j].coord.y_ed + (cells[j].coord.y_ed - v_min)) / 2 < cells[i].coord.y_ed):
                 # two cells are adjacent on column axis
                 cells[i].add_rights([cells[j]])
                 cells[j].add_lefts([cells[i]])
@@ -160,41 +158,42 @@ def detect_relations(cells, thr=10):
             elif 0 <= cells[j].coord.y_st - cells[i].coord.y_ed < thr\
                 and (cells[j].coord.x_st < (cells[i].coord.x_st + cells[i].coord.x_ed) / 2 < cells[j].coord.x_ed
                      or cells[i].coord.x_st < (cells[j].coord.x_st + cells[j].coord.x_ed) / 2 < cells[i].coord.x_ed
-                     or cells[j].coord.x_st < (cells[i].coord.x_st + cells[i].coord.x_ed + v_min) / 2 < cells[j].coord.x_ed
-                     or cells[i].coord.x_st < (cells[j].coord.x_st + cells[j].coord.x_ed + v_min) / 2 < cells[i].coord.x_ed):
+                     or cells[j].coord.x_st < (cells[i].coord.x_st + cells[i].coord.x_ed + h_min) / 2 < cells[j].coord.x_ed
+                     or cells[i].coord.x_st < (cells[j].coord.x_st + cells[j].coord.x_ed + h_min) / 2 < cells[i].coord.x_ed):
                 cells[i].add_downs([cells[j]])
                 cells[j].add_ups([cells[i]])
 
 
 def detect_row_number(now_cell, now_row, base_cell):
-    """[summary]
+    """detecting row start/end number of cell that starting 0, top-to-bottom
 
     Args:
-        now_cell ([type]): [description]
-        now_row ([type]): [description]
-        base_cell ([type]): [description]
+        now_cell (Cell): A cell that current processing object
+        now_row (int): A current row number
+        base_cell (Cell): A cell that is used as a height standard to decide next right cell
     """
     def detect_row(now_cell, now_row, base_cell, thr=1.3):
-        """[summary]
+        """detecting row end number using DFS
 
         Args:
-            now_cell ([type]): [description]
-            now_row ([type]): [description]
-            base_cell ([type]): [description]
-            thr (float, optional): [description]. Defaults to 1.3.
+            now_cell (Cell): A cell that current processing object
+            now_row (int): A current row number
+            base_cell (Cell): A cell that is used as a height standard to decide next right cell
+            thr (float, optional): A multiplier to distinguish
+                whether next cell larger than current cell or not. Defaults to 1.3.
 
         Returns:
-            [type]: [description]
+            int: row end number of current cell
         """
         # if y_st of now_cell has not arleady initialized, set now_row
         if now_cell.row_col.y_st < 0:
             now_cell.row_col.y_st = now_row
-
-        # 右側が存在しないならyのedに現在の行数を入れる
+        # now_cell does'nt have right cell, row end number is now_row
         if len(now_cell.rights) <= 0:
             now_cell.row_col.y_ed = now_row
             return now_cell.row_col.y_ed
-        # 1個しかないならdetect_rowを再帰呼び出し
+        # if now_cell has only one right cell, row end number is max value
+        # of recursion result(max of all right cell's row end numbers)
         elif len(now_cell.rights) == 1:
             max_row = max(
                 now_row,
@@ -202,16 +201,26 @@ def detect_row_number(now_cell, now_row, base_cell):
                     now_cell.rights[0],
                     now_row,
                     base_cell))
+        # if now_cell has two or more right cells, process with DFS from an upper cell
+        # when processing lower cell, increment now_row(because it's one line down)
         else:
             max_row = now_row
             i = 0
             for right in now_cell.rights:
+                # selecting next cell using base cell height
+                # if next cell's height falls within the range of base cell's height,
+                # move to next processing
+
+                # if next cell's height smaller than current cell's one, move to next process
+                # with new base cell(next cell is new base cell)
                 if base_cell.coord.y_st <= (
                         right.coord.y_st + right.coord.y_ed) / 2 <= base_cell.coord.y_ed and (
                         base_cell.coord.y_ed - base_cell.coord.y_st) * thr >= right.coord.y_ed - right.coord.y_st:
                     max_cd = detect_row(right, now_row + i, right)
                     i += 1
                     max_row = max(max_row, max_cd)
+                # if next cell's height larger than current cell's one, move to next process
+                # with current base cell(no update on base cell)
                 elif right.coord.y_st <= (base_cell.coord.y_st + base_cell.coord.y_ed) / 2 <= right.coord.y_ed:
                     max_cd = detect_row(right, now_row + i, base_cell)
                     i += 1
@@ -220,32 +229,29 @@ def detect_row_number(now_cell, now_row, base_cell):
         return now_cell.row_col.y_ed
 
     detect_row(now_cell, now_row, base_cell)
-    next_cells = now_cell.downs
-    if len(next_cells) == 0:
+    if len(now_cell.downs) == 0:
         return
     else:
         # if next_cells >= 2, select most left cell
         # cells are top-to-bottom
-        next_cell = next_cells[0]
+        next_cell = now_cell.downs[0]
     detect_row_number(next_cell, now_cell.row_col.y_ed + 1, next_cell)
 
 
 def detect_col_number(now_cell, now_col):
-    """[summary]
+    """detecting column start/end number of cell that starting 0, left-to-right
 
     Args:
-        now_cell ([type]): [description]
-        now_col ([type]): [description]
+        now_cell (Cell): A cell that current processing object
+        now_col (int): A current col number
     """
     def detect_col(now_cell, now_col):
-        """[summary]
-
+        """detecting column end number using DFS
         Args:
-            now_cell ([type]): [description]
-            now_col ([type]): [description]
-
+            now_cell (Cell): A cell that current processing object
+            now_col (int): A current col number
         Returns:
-            [type]: [description]
+            int: column end number of current cell
         """
         if now_cell.row_col.x_st < 0:
             now_cell.row_col.x_st = now_col
@@ -268,22 +274,43 @@ def detect_col_number(now_cell, now_col):
 
 
 def get_start_cell(cells):
+    """getting start cell of row/col number searching
+
+    Args:
+        cells ([Cells]): list of cells
+
+    Returns:
+        Cell: start cell
+    """
+    # calculate and select smallest euclid distance from origin (x_st-0)^2 + (y_st-0)^2
     return cells[np.argmin(
         [c.coord.x_st ** 2 + c.coord.y_st ** 2 for c in cells])]
 
 
-def filtering_cells(cells, img, thr=10):
-    # 除去対象のセル(文字列に反応した四角形)、あまりに大きなセルはここでフィルタリング
+def filtering_cells(cells, img, thr=10, area_thr=0.85):
+    """removing rectangles that do not meet the requirement for a cell of a table
+    Args:
+        cells ([Cell]): list of cell candidate
+        img (np.ndarray): input image
+        thr (int, optional): threashold value. Defaults to 10.
+        area_thr (float, optional): thr of rate of input image area. Defaults to 0.85
+    Returns:
+        [Cell]: list of correct cells
+    """    
     del_list = []
     for i in range(len(cells)):
+        # list of cells inside the i-th cell
         in_list = []
-        if cells[i].coord.calc_area() >= 0.85 * img.shape[0] * img.shape[1]:
+        # remove cells that are too large in area
+        if cells[i].coord.calc_area() >= area_thr * img.shape[0] * img.shape[1]:
             del_list.append(i)
             continue
-        if cells[i].coord.x_ed - cells[i].coord.x_st >= 0.85 * img.shape[1]:
+        # remove cells that are too large in width
+        if cells[i].coord.x_ed - cells[i].coord.x_st >= area_thr * img.shape[1]:
             del_list.append(i)
             continue
-        if cells[i].coord.y_ed - cells[i].coord.y_st >= 0.85 * img.shape[0]:
+        # remove cells that are too large in height
+        if cells[i].coord.y_ed - cells[i].coord.y_st >= area_thr * img.shape[0]:
             del_list.append(i)
             continue
         if i in del_list:
@@ -291,11 +318,13 @@ def filtering_cells(cells, img, thr=10):
         for j in range(len(cells)):
             if i == j:
                 continue
+            # if j-th cell completely inside the i-th cell, add i-th cell to in_list
             if cells[i].coord.x_st <= cells[j].coord.x_st <= cells[j].coord.x_ed <= cells[i].coord.x_ed\
                and cells[i].coord.y_st <= cells[j].coord.y_st <= cells[j].coord.y_ed <= cells[i].coord.y_ed:
                 in_list.append(j)
         for j in in_list:
             for k in in_list:
+                # If at least one cell with an index exists, outside cell is invalid
                 if np.abs(j - k) == 1:
                     c1 = cells[min(j, k)]
                     c2 = cells[max(j, k)]
@@ -303,9 +332,10 @@ def filtering_cells(cells, img, thr=10):
                               (c2.coord.x_st + c2.coord.x_ed)) <= thr:
                         del_list.append(i)
                     break
+        # if outside cell is valid, inside cells are invalid
         if i not in del_list:
             del_list += in_list
-    cells = [cell for i, cell in enumerate(cells) if i not in del_list][::-1]
+    cells = [cell for i, cell in enumerate(cells) if i not in del_list]
     return cells
 
 
@@ -313,21 +343,21 @@ def main_process(path, api):
     img = cv2.imread(path)
     # for tesseract
     api.SetImageFile(path)
-    h_thr = get_h_thr(api, path)
-    vc, hc = extract_ruled_line(img, h_thr=h_thr)
+    v_thr = get_v_thr(api, path)
+    vc, hc = extract_ruled_line(img, v_thr=v_thr)
     cells = extract_cells(img, vc, hc)
     # remove rectangles those are not cell
     cells = filtering_cells(cells)
-
+    # detect relationd of each cell
     detect_relations(cells)
-    # スタートセル
+    # get start cell
     start_cell = get_start_cell(cells)
+    # identify row/col start/end numbers
     detect_row_number(start_cell, 0, start_cell)
     detect_col_number(start_cell, 0)
 
 
 if __name__ == '__main__':
-    # main処理
     # tesseract ocr api
     api = PyTessBaseAPI(psm=PSM.AUTO, oem=OEM.LSTM_ONLY, lang='jpn')
     # form of /path/to/table_images/
