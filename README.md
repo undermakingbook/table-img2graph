@@ -7,6 +7,8 @@ Each Cell type object has coordinates on an image, row/column start/end number o
 
 List of cells can be converted to numpy array, so we can convert table image to csv, too.
 
+※ A table image must not contain any objects other than a table! Use a different program to extract the table area as preprocess
+
 ## example
 ![sampleのコピー](https://user-images.githubusercontent.com/44527660/84593126-5b11d480-ae85-11ea-9dde-8f768d0acb6e.png)
 
