@@ -1,5 +1,5 @@
 import numpy as np
-
+from PIL import Image
 
 def get_v_thr(api, imgpath):
     """getting frequent value of cell-to-cell height
@@ -35,3 +35,19 @@ def get_start_cell(cells):
     # (y_st-0)^2
     return cells[np.argmin(
         [c.coord.x_st ** 2 + c.coord.y_st ** 2 for c in cells])]
+
+
+def split_img_cells(img, cells):
+    for cell in cells:
+        # start coord convert to smaller integer
+        # end coord convert to larger integer
+        x_st = int(np.trunc(cell.coord.x_st))
+        x_ed = int(np.ceil(cell.coord.x_ed))
+        y_st = int(np.trunc(cell.coord.y_st))
+        y_ed = int(np.ceil(cell.coord.y_ed))
+        cell.img = img[y_st:y_ed, x_st:x_ed, :]
+
+
+def detect_text_on_tess(api, cell):
+    api.SetImage(Image.fromarray(cell.img))
+    cell.text = api.GetUTF8Text()

@@ -4,7 +4,7 @@ import cv2
 from tesserocr import PyTessBaseAPI, PSM, OEM
 from extract_cell import extract_ruled_line, extract_cells, filtering_cells
 from process_cell import detect_relations, detect_row_number, detect_col_number
-from utils import get_v_thr, get_start_cell
+from utils import get_v_thr, get_start_cell, split_img_cells, detect_text_on_tess
 
 
 # TODO: adding example code
@@ -24,8 +24,11 @@ def main_process(path, api):
     # identify row/col start/end numbers
     detect_row_number(start_cell, 0, start_cell)
     detect_col_number(start_cell, 0)
+    split_img_cells(img, cells)
     for cell in cells:
         print(cell.idx, cell.row_col)
+        detect_text_on_tess(api, cell)
+        print(cell.text)
 
 
 if __name__ == '__main__':
