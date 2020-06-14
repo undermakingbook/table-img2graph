@@ -16,7 +16,7 @@ def main_process(path, api):
     vc, hc = extract_ruled_line(img, v_thr=v_thr)
     cells = extract_cells(img, vc, hc)
     # remove rectangles those are not cell
-    cells = filtering_cells(cells)
+    cells = filtering_cells(img, cells)
     # detect relationd of each cell
     detect_relations(cells)
     # get start cell
@@ -24,6 +24,8 @@ def main_process(path, api):
     # identify row/col start/end numbers
     detect_row_number(start_cell, 0, start_cell)
     detect_col_number(start_cell, 0)
+    for cell in cells:
+        print(cell.idx, cell.row_col)
 
 
 if __name__ == '__main__':

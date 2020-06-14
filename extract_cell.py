@@ -102,10 +102,11 @@ def extract_cells(img, vcon, hcon, thr=3):
         # create cell
         cell = Cell.Cell(i, x, x + w, y, y + h)
         cells.append(cell)
+        i += 1
     return cells
 
 
-def filtering_cells(cells, img, thr=10, area_thr=0.85):
+def filtering_cells(img, cells, thr=10, area_thr=0.85):
     """removing rectangles that do not meet the requirement for a cell of a table
     Args:
         cells ([Cell]): list of cell candidate
