@@ -40,7 +40,21 @@ class Rect:
     # 面積を計算
 
     def calc_area(self):
-        return (self.__x_ed - self.__x_st) * (self.__y_ed - self.__y_st)
+        return (self.__x_ed - self.__x_st) * (self.__y_ed + 1e-4 - self.__y_st)
+
+    def is_intersect(self, oth):
+        return max(self.x_st, oth.x_st) <= min(self.x_ed, oth.x_ed) \
+            and max(self.y_st, oth.y_st) <= min(self.y_ed, oth.y_ed)
+
+    def overlap_other(self, oth):
+        if not self.is_intersect(oth):
+            return 0
+        x_st = max(self.x_st, oth.x_st)
+        x_ed = min(self.x_ed, oth.x_ed)
+        y_st = max(self.y_st, oth.y_st)
+        y_ed = min(self.y_ed, oth.y_ed)
+        mini = Rect(x_st, x_ed, y_st, y_ed)
+        return mini.calc_area() / oth.calc_area()
 
     # for debug
     def __str__(self):
@@ -54,6 +68,10 @@ class Cell:
         # セルの座標
         self.__coord = Rect(x_st, x_ed, y_st, y_ed)
         self.row_col = Rect(-1, -1, -1, -1)
+        # セルの内容
+        self.__text = ''
+        # セルの画像
+        self.__img = None
         # 各方向への隣接セル一覧
         self.__rights = []
         self.__lefts = []
@@ -67,6 +85,22 @@ class Cell:
     @property
     def coord(self):
         return self.__coord
+
+    @property
+    def text(self):
+        return self.__text
+
+    @text.setter
+    def text(self, text):
+        self.__text = text
+
+    @property
+    def img(self):
+        return self.__img
+
+    @img.setter
+    def img(self, img):
+        self.__img = img
 
     @property
     def rights(self):
