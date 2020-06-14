@@ -1,5 +1,9 @@
 # table-img2graph
-Converting table image from scanned pdf data to graph of cells
+Converting table image from scanned pdf data to graph of cells.
+
+Once input table image, construct a graph of cells and run OCR using tesseract/google cloud vision api automatically.
+
+Each Cell type object has coordinates on an image, row/column start/end number of a table matrix, text, image subarea, adjacents(right, left, up, down).
 
 List of cells can be converted to numpy array, so we can convert table image to csv, too.
 
