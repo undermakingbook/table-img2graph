@@ -106,7 +106,7 @@ def extract_cells(img, vcon, hcon, thr=3):
     return cells
 
 
-def filtering_cells(img, cells, thr=10, area_thr=0.85):
+def filtering_cells(img, cells, v_thr, thr=10, area_thr=0.85):
     """removing rectangles that do not meet the requirement for a cell of a table
     Args:
         cells ([Cell]): list of cell candidate
@@ -125,9 +125,17 @@ def filtering_cells(img, cells, thr=10, area_thr=0.85):
                 img.shape[0] * img.shape[1]:
             del_list.append(i)
             continue
+        # remove cells that are too small in width
+        if cells[i].coord.x_ed - cells[i].coord.x_st <= v_thr / 2:
+            del_list.append(i)
+            continue
         # remove cells that are too large in width
         if cells[i].coord.x_ed - \
                 cells[i].coord.x_st >= area_thr * img.shape[1]:
+            del_list.append(i)
+            continue
+        # remove cells that are too small in height
+        if cells[i].coord.y_ed - cells[i].coord.y_st <= v_thr / 2:
             del_list.append(i)
             continue
         # remove cells that are too large in height

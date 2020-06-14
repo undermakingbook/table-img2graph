@@ -121,3 +121,15 @@ def create_img_for_gcloud(img, cells):
         y1 = int(np.trunc(y1))
         img_new[y1:y1 + cell.img.shape[0], x1:x1 + cell.img.shape[1], :] = cell.img
     return img_new
+
+
+def to_numpy(cells):
+    x_ed = max([c.row_col.x_ed for c in cells]) + 1
+    y_ed = max([c.row_col.y_ed for c in cells]) + 1
+    arr = np.full((y_ed, x_ed), '', dtype=object)
+    for cell in cells:
+        x1, x2 = cell.row_col.x_st, cell.row_col.x_ed
+        y1, y2 = cell.row_col.y_st, cell.row_col.y_ed
+        text = cell.text.replace('\n', '')
+        arr[y1:y2 + 1, x1:x2 + 1] = np.full((y2 + 1 - y1, x2 + 1 - x1), text if text != '' else '-', dtype=object)
+    return arr
