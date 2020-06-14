@@ -42,6 +42,10 @@ class Rect:
     def calc_area(self):
         return (self.__x_ed - self.__x_st) * (self.__y_ed - self.__y_st)
 
+    # for debug
+    def __str__(self):
+        return 'row:{0},{1} col:{2},{3}'.format(self.__y_st, self.__y_ed, self.__x_st, self.__x_ed)
+
 
 class Cell:
     def __init__(self, idx, x_st, x_ed, y_st, y_ed):
@@ -92,6 +96,23 @@ class Cell:
 
     def add_downs(self, downs):
         self.__downs += downs
+
+    # sorting adjacents to detect row/col number correctly
+    def sort_rights(self):
+        # sorting ascending by y value
+        self.__rights.sort(key=lambda cell: cell.coord.y_st)
+
+    def sort_lefs(self):
+        # sorting ascending by y value
+        self.__lefts.sort(key=lambda cell: cell.coord.y_st)
+
+    def sort_ups(self):
+        # sorting ascending by x value
+        self.__ups.sort(key=lambda cell: cell.coord.x_st)
+
+    def sort_downs(self):
+        # sorting ascending by x value
+        self.__downs.sort(key=lambda cell: cell.coord.x_st)
 
     # 行方向へのスパニングがあるか
     def is_row_spanning(self):

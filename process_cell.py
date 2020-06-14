@@ -57,6 +57,8 @@ def detect_row_number(now_cell, now_row, base_cell):
         # if y_st of now_cell has not arleady initialized, set now_row
         if now_cell.row_col.y_st < 0:
             now_cell.row_col.y_st = now_row
+        # 0-th of rights has smallest y value among all of rights
+        now_cell.sort_rights()
         # now_cell does'nt have right cell, row end number is now_row
         if len(now_cell.rights) <= 0:
             now_cell.row_col.y_ed = now_row
@@ -99,6 +101,8 @@ def detect_row_number(now_cell, now_row, base_cell):
         return now_cell.row_col.y_ed
 
     detect_row(now_cell, now_row, base_cell)
+    # 0-th of downs has smallest x value among all of downs
+    now_cell.sort_downs()
     if len(now_cell.downs) == 0:
         return
     else:
@@ -125,6 +129,8 @@ def detect_col_number(now_cell, now_col):
         """
         if now_cell.row_col.x_st < 0:
             now_cell.row_col.x_st = now_col
+        # 0-th of downs has smallest x value among all of downs
+        now_cell.sort_downs()
         if len(now_cell.downs) == 0:
             now_cell.row_col.x_ed = now_col
             return now_cell.row_col.x_ed
@@ -136,6 +142,8 @@ def detect_col_number(now_cell, now_col):
         return now_cell.row_col.x_ed
 
     detect_col(now_cell, now_col)
+    # 0-th of rights has smallest y value among all of rights
+    now_cell.sort_rights()
     if len(now_cell.rights) == 0:
         return
     else:
