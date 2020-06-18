@@ -11,6 +11,7 @@ opencv-python = "^4.2.0"
 imutils = "^0.5.3"
 tesserocr = "^2.5.1"
 google-cloud-vision = "^1.0.0"
+Pillow = "^7.1.2"
 
 [tool.poetry.dev-dependencies]
 
