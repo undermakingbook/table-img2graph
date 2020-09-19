@@ -41,7 +41,7 @@ def main_process(path, api):
         detect_text_on_tess(api, cell)
         print(cell.text)
     print(to_numpy(cells))
-    np.savetxt('sample.csv', to_numpy(cells), delimiter=',', fmt='%s')
+    np.savetxt('~/res/sample_copy.csv', to_numpy(cells), delimiter=',', fmt='%s')
 
 
 if __name__ == '__main__':
@@ -50,6 +50,6 @@ if __name__ == '__main__':
     api = PyTessBaseAPI(psm=PSM.AUTO, oem=OEM.LSTM_ONLY, lang='jpn')
     # form of /path/to/table_images/
     # imgpaths = glob.glob(os.environ['TABLE_IMG_PATH'] + '*')
-    imgpaths = ['sample_image/sample.png']
+    imgpaths = ['~/res/sample_copy.png']
     for path in imgpaths:
         main_process(path, api)
