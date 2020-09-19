@@ -2,11 +2,16 @@
 # import os
 import numpy as np
 import cv2
+
+import locale
+locale.setlocale(locale.LC_ALL, 'C')
 from tesserocr import PyTessBaseAPI, PSM, OEM
+
 from extract_cell import extract_ruled_line, extract_cells, filtering_cells
 from process_cell import detect_relations, detect_row_number, detect_col_number
 from utils import get_v_thr, get_start_cell, split_img_cells, detect_text_on_tess, to_numpy
 # from utils import detect_text_on_gcloud, create_img_for_gcloud
+
 
 
 def main_process(path, api):

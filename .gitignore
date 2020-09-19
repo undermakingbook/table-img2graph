@@ -1,0 +1,8 @@
+.bash_history
+.cache/
+.python_history
+.viminfo
+__pychache__/
+.vscode/
+.DS_Store
+
