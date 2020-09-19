@@ -25,5 +25,5 @@ $ docker exec -it <CONTAINER_ID> bash
 
 ## usage
 ```
-$ python3 example.py
+$ python3 main.py
 ```
