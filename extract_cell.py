@@ -51,6 +51,9 @@ def extract_ruled_line(img, v_thr=None):
     horizontal_contours, _ = cv2.findContours(
         horizontal_lines_img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
+    if not (len(vertical_contours) > 0 and len(horizontal_contours) > 0):
+        return None, None
+    
     # sorting contours
     vertical_contours, vertical_bounding_boxes = sort_contours(
         vertical_contours, method="left-to-right")
