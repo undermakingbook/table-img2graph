@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class CellProcessor:
     """cell processor class
     """
@@ -60,10 +61,8 @@ class CellProcessor:
 
     def _get_start_cell(self, cells):
         """getting start cell of row/col number searching
-
         Args:
             cells ([Cells]): list of cells\
-
         Returns:
             Cell: start cell
         """
@@ -71,7 +70,7 @@ class CellProcessor:
         # (y_st-0)^2
         return cells[np.argmin(
             [c.coord.x_st ** 2 + c.coord.y_st ** 2 for c in cells])]
-
+    
     def _detect_row_number(self, now_cell, now_row, base_cell):
         """detecting row start/end number of cell that starting 0, top-to-bottom
 

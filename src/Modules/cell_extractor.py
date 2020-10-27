@@ -4,45 +4,29 @@ import numpy as np
 from imutils.contours import sort_contours
 from Table import Cell
 
+
 class CellExtractor:
     """cell extractor class
     """
-    def __init__(self, api, img):
+    def __init__(self, api):
         """constructor
 
         Args:
             api (PyTessBaseAPI): an instance of PyTessBaseAPI
-            img (np.ndarray): ndarray of input image read by opencv
         """
         self.api = api
-        self.img = img
 
-    def extract(self):
-        """extracting cells
-
-        Returns:
-            [Cell]: list of correct cells
-        """
-        # for tesseract
-        v_thr = self._get_v_thr(self.api)
-        vc, hc = self._extract_ruled_line(self.img, v_thr=v_thr)
-        cells = self._extract_cells(self.img, vc, hc)
-        # remove rectangles those are not cell
-        cells = self._filtering_cells(self.img, cells, v_thr)
-        return cells
-
-    def _get_v_thr(self, api):
+    def get_v_thr(self):
         """getting frequent value of cell-to-cell height
         This function identify frequent value of character height using tesseract ocr
         to prevent line extracting function from misrecognition of vertical line of character
         as vertical line of cell
-        Args:
-            api (PyTessBaseAPI): an instance of PyTessBaseAPI
+
         Returns:
             v_thr (numpy.float64): threshold value of kernel to extract vertical rurled line
         """
         # get ocr result
-        words = api.GetWords()
+        words = self.api.GetWords()
         # horizontal value of all words
         hs = [words['h'] for _, words in words]
         freq, bins = np.histogram(hs)
@@ -50,7 +34,7 @@ class CellExtractor:
         v_thr = np.ceil((bins[np.argmax(freq) + 1] + bins[np.argmax(freq)]) / 2)
         return v_thr
 
-    def _extract_ruled_line(self, img, v_thr=None):
+    def extract_ruled_line(self, img, v_thr=None):
         """Extract ruled lines of a table using cv2.findContours
         Args:
             img (np.ndarray): ndarray of input image read by opencv
@@ -96,6 +80,9 @@ class CellExtractor:
         horizontal_contours, _ = cv2.findContours(
             horizontal_lines_img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
+        if not (len(vertical_contours) > 0 and len(horizontal_contours) > 0):
+            return None, None
+            
         # sorting contours
         vertical_contours, vertical_bounding_boxes = sort_contours(
             vertical_contours, method="left-to-right")
@@ -104,7 +91,7 @@ class CellExtractor:
 
         return vertical_contours, horizontal_contours
     
-    def _extract_cells(self, img, vcon, hcon, thr=3):
+    def extract_cells(self, img, vcon, hcon, thr=3):
         """Extracting cells of a table using cv2.findContours
         Args:
             img (np.ndarray): ndarray of input image read by opencv
@@ -149,7 +136,7 @@ class CellExtractor:
             i += 1
         return cells
 
-    def _filtering_cells(self, img, cells, v_thr, thr=10, area_thr=0.85):
+    def filtering_cells(self, img, cells, v_thr, thr=10, area_thr=0.85):
         """removing rectangles that do not meet the requirement for a cell of a table
         Args:
             cells ([Cell]): list of cell candidate

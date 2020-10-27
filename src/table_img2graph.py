@@ -1,23 +1,26 @@
 import os
+import subprocess
+from pathlib import Path
+from glob import glob
 
 import numpy as np
 import cv2
 from PIL import Image
+from pdf2image import convert_from_path
 
 import locale
 locale.setlocale(locale.LC_ALL, 'C')
 from tesserocr import PyTessBaseAPI, PSM, OEM
 
-from cell_extractor import CellExtractor
-from cell_processor import CellProcessor
+from Modules.cell_extractor import CellExtractor
+from Modules.cell_processor import CellProcessor
+from Modules.table_extractor import TableExtractor
 
-class Img2graph:
-    """Image to graph converter class
+class TableImg2graph:
+    """Table image to graph converter class
     usage:
         >>> from img2graph import Img2graph
-
         >>> i2g = Img2Graph(<API_TYPE>)
-        >>> i2g.execute(<IMAGE_PATH>)
     """
     def __init__(self, api_type):
         """constructor
@@ -42,8 +45,8 @@ class Img2graph:
         else:
             return None
     
-    def execute(self, path):
-        """execute img2graph
+    def convert_table_img2graph(self, path):
+        """convert table image to graph
 
         Args:
             path (str): image path
@@ -51,15 +54,20 @@ class Img2graph:
         img = cv2.imread(path)
         self.api.SetImageFile(path)
 
-        extractor = CellExtractor(self.api, img)
-        cells = extractor.extract()
+        extractor = CellExtractor(self.api)
+        # for tesseract
+        v_thr = extractor.get_v_thr()
+        vc, hc = extractor.extract_ruled_line(img, v_thr=v_thr)
+        cells = extractor.extract_cells(img, vc, hc)
+        # remove rectangles those are not cell
+        cells = extractor.filtering_cells(img, cells, v_thr)
 
         processor = CellProcessor(img, cells)
         cells = processor.process()
 
         # if you want to use gcolud ocr, you should use below 2 line
-        # img_gc = self._create_img_for_gcloud(img, cells)
-        # self._detect_text_on_gcloud(img_gc, cells)
+        # img_gc = create_img_for_gcloud(img, cells)
+        # detect_text_on_gcloud(img_gc, cells)
 
         for cell in cells:
             # use tesseract to ocr
@@ -73,14 +81,26 @@ class Img2graph:
 
         print('Finish!')
 
-    def multi_execute(self, lst_path):
-        """execute img2graph
+    def extract_table(self, path):
+        """extract table image from patent pdf file
 
         Args:
-            lst_path ([str]): image path list
+            path (str): pdf file path
         """
-        for path in lst_path:
-            self.execute(path)
+        # convert pdf  to image
+        output_dir, output_page_dir = self._convert_pdf2image(path)
+
+        # make save directories
+        output_cell_dir = output_dir + 'cells/'
+        subprocess.run(['mkdir', output_cell_dir])
+        output_table_dir = output_dir + 'tables/'
+        subprocess.run(['mkdir', output_table_dir])
+
+        # extract table
+        lst_pages = glob(output_page_dir + '*')
+        for k, page in enumerate(lst_pages):
+            extractor = TableExtractor(self.api, page, output_cell_dir, output_table_dir)
+            extractor.detect_table(k)
 
         print('Finish!')
 
@@ -89,7 +109,6 @@ class Img2graph:
         Args:
             img (np.ndarray): input original image
             cells ([Cell]): list of cells those have already set cell.img
-
         Returns:
             [np.ndarray]: created image that has only characters, not ruled lines
         """    
@@ -147,7 +166,6 @@ class Img2graph:
 
     def _to_numpy(self, cells):
         """convert to numpy array
-
         Args:
             cells ([Cell]): list of cells
         """
@@ -160,3 +178,29 @@ class Img2graph:
             text = cell.text.replace('\n', '')
             arr[y1:y2 + 1, x1:x2 + 1] = np.full((y2 + 1 - y1, x2 + 1 - x1), text if text != '' else '-', dtype=object)
         return arr
+
+    def _convert_pdf2image(self, path):
+        """convert pdf to image
+
+        Args:
+            path (str): pdf file path
+
+        Returns:
+            output_dir (str): Directory path images are going to save there
+            output_page_dir (str): Directory path page images saved
+        """
+        # make directory
+        _path = Path(path)
+        output_dir = str(_path.parent) + '/' + _path.stem + '/'
+        subprocess.run(['mkdir', output_dir])
+
+        # convert pdf to image
+        page_imgs = convert_from_path(path)
+
+        # save page images
+        output_page_dir = output_dir + 'pages/'
+        subprocess.run(['mkdir', output_page_dir])
+        for i, img in enumerate(page_imgs):
+            img.save(output_page_dir + 'page_{0}.png'.format(i), quality=95)
+
+        return output_dir, output_page_dir
