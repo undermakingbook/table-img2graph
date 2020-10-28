@@ -50,7 +50,7 @@ t2g.convert_table_img2graph(<IMAGE_PATH>)
 
 Extract table images from scanned pdf data:
 ```
-t2g.extract_table(args.extract)
+t2g.extract_table(<PDF_FILE_PATH>)
 ```
 
 ## develop
