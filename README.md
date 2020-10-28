@@ -31,9 +31,9 @@ $ python3 main.py [Options]
 
 | Option                             | Function                                    |
 |------------------------------------|---------------------------------------------|
-| `-a`, `--api`                      | Choose OCR engine. (Default: `tesseract`)   |
-| `-c`\\`--convert` `<IMAGE_PATH>`     | Convert table images to graph of cells.     |
-| `-e`\\`--extract` `<PDF_FILE_PATH>` | Extract table images from scanned pdf data. |
+| `-a`/`--api`                       | Choose OCR engine. (Default: `tesseract`)   |
+| `-c`/`--convert` `<IMAGE_PATH>`    | Convert table images to graph of cells.     |
+| `-e`/`--extract` `<PDF_FILE_PATH>` | Extract table images from scanned pdf data. |
 
 ### As module
 
