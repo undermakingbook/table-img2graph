@@ -13,6 +13,7 @@ tesserocr = "^2.5.1"
 google-cloud-vision = "^1.0.0"
 Pillow = "^7.1.2"
 pdf2image = "^1.14.0"
+tqdm = "^4.51.0"
 
 [tool.poetry.dev-dependencies]
 
