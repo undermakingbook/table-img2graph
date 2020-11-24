@@ -10,6 +10,10 @@ __pycache__/
 *.png
 .python_history
 .viminfo
+.devcontainer/
+.gitconfig
+.ssh/
+.vscode-server/
 
 !sample.png
 !sample.csv
