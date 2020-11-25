@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  latest:
+    build: .
+    image: p_pa_table-analysis/table-img2graph
+    container_name: p_pa_table-analysis_table-img2graph
+    environment:
+      TZ: Asia/Tokyo
+    ports:
+      - 8888:8888
+    volumes:
+      - ./:/home/
+    tty: true
